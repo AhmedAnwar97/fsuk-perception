@@ -15,6 +15,13 @@ from keras.applications.resnet50 import ResNet50
 import numpy as np
 import math
 
+WEIGHTS_PATH = ('https://github.com/fchollet/deep-learning-models/'
+                'releases/download/v0.2/'
+                'resnet50_weights_tf_dim_ordering_tf_kernels.h5')
+WEIGHTS_PATH_NO_TOP = ('https://github.com/fchollet/deep-learning-models/'
+                       'releases/download/v0.2/'
+                       'resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5')
+
 RESNET50_BACKEND_PATH   = "resnet50_weights_tf_dim_ordering_tf_kernels.h5"    # should be hosted on a server
 
 class BaseFeatureExtractor(object):
@@ -37,6 +44,25 @@ class BaseFeatureExtractor(object):
 
 class ResNet50Feature(BaseFeatureExtractor):
     """docstring for ClassName"""
+
+    def __init__(self, input_size):
+        resnet50 = ResNet50(input_shape=(input_size, input_size, 3), include_top=False)
+        resnet50.layers.pop() # remove the average pooling layer
+        #resnet50.load_weights(RESNET50_BACKEND_PATH)
+
+        self.feature_extractor = Model(resnet50.layers[0].input, resnet50.layers[-1].output)
+
+    def normalize(self, image):
+        image = image[..., ::-1]
+        image = image.astype('float')
+
+        image[..., 0] -= 103.939
+        image[..., 1] -= 116.779
+        image[..., 2] -= 123.68
+
+        return image 
+
+    """
     def __init__(self, input_shape):
 
         # Define the input as a tensor with shape input_shape
@@ -154,23 +180,14 @@ class ResNet50Feature(BaseFeatureExtractor):
         # output layer
         # X = Flatten()(X)
         # X = Dense(classes, activation='softmax', name='fc' + str(classes), kernel_initializer = glorot_uniform(seed=0))(X)
-        
-        
-        # Create model
-        # model = Model(inputs = self.X_input, outputs = X, name='ResNet50')
 
         self.feature_extractor = Model(self.X_input, X)  
-        self.feature_extractor.load_weights(RESNET50_BACKEND_PATH)
-    
 
-    def normalize(self, image):
-        image = image[..., ::-1]
-        image = image.astype('float')
+        weights_path = keras_utils.get_file(
+                'resnet50_weights_tf_dim_ordering_tf_kernels.h5',
+                WEIGHTS_PATH,
+                cache_subdir='models',
+                md5_hash='a7b3fe01876f51b976af0dea6bc144eb')
 
-        image[..., 0] -= 103.939
-        image[..., 1] -= 116.779
-        image[..., 2] -= 123.68
-
-        return image 
-
-
+        self.feature_extractor.load_weights(weights_path)
+    """

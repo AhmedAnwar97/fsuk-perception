@@ -40,7 +40,6 @@ class YOLO(object):
 
         if backend == 'ResNet50':
             self.feature_extractor = ResNet50Feature(self.input_size)
-            self.feature_extractor.ResNet50()
         else:
             raise Exception('Architecture not supported! Only support Full Yolo, Tiny Yolo, MobileNet, SqueezeNet, VGG16, ResNet50, and Inception3 at the moment!')
 
@@ -460,3 +459,4 @@ class YOLO(object):
         boxes  = decode_netout(netout, self.anchors, self.nb_class)
 
         return boxes
+
