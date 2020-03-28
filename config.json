@@ -1,0 +1,36 @@
+{
+    "model" : {
+        "backend":              "ResNet50",
+        "input_size":           416,
+        "anchors":              [1.69,5.13, 2.91,7.48, 3.78,4.36, 5.43,9.90, 9.61,12.21],
+        "max_box_per_image":    10,        
+        "labels":               ["blackC", "blueC", "yellowC", "orangeC"]
+    },
+
+    "train": {
+        "train_image_folder":   "/home/ahmed/cuda/keras-yolo2/images/",
+        "train_annot_folder":   "/home/ahmed/cuda/keras-yolo2/annotations/",     
+          
+        "train_times":          16,
+        "pretrained_weights":   "weights.h5",
+        "batch_size":           4,
+        "learning_rate":        1e-3,
+        "nb_epochs":            37,
+        "warmup_epochs":        10,
+
+        "object_scale":         5.0 ,
+        "no_object_scale":      1.0,
+        "coord_scale":          1.0,
+        "class_scale":          1.0,
+
+        "saved_weights_name":   "",
+        "debug":                true
+    },
+
+    "valid": {
+        "valid_image_folder":   "",
+        "valid_annot_folder":   "",
+
+        "valid_times":          1
+    }
+}
