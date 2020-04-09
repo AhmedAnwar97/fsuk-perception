@@ -36,8 +36,8 @@ The configuration file is a json file, which looks like this:
     },
 
     "train": {
-        "train_image_folder":   "/home/andy/data/raccoon_dataset/images/",
-        "train_annot_folder":   "/home/andy/data/raccoon_dataset/anns/",      
+        "train_image_folder":   "/home/ahmed/data/dataset/images/",
+        "train_annot_folder":   "/home/ahmed/data/dataset/anns/",      
           
         "train_times":          10,             # the number of time to cycle through the training set, useful for small datasets
         "pretrained_weights":   "",             # specify the path of the pretrained weights, but it's fine to start from scratch
