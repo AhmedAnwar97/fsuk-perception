@@ -5,7 +5,7 @@ import os
 import cv2
 import numpy as np
 from tqdm import tqdm
-from preprocessing import parse_annotation
+from preprocessing_kp import parse_annotation
 from utils import draw_boxes
 from frontend import YOLO
 import json
@@ -43,7 +43,7 @@ def _main_(args):
     #   Make the model 
     ###############################
 
-    yolo = YOLO(backend             = config['model']['backend'],
+    kp = keypoints(backend             = config['model']['backend'],
                 input_size          = config['model']['input_size'], 
                 labels              = config['model']['labels'], 
                 max_box_per_image   = config['model']['max_box_per_image'],
@@ -53,7 +53,7 @@ def _main_(args):
     #   Load trained weights
     ###############################    
 
-    yolo.load_weights(weights_path)
+    kp.load_weights(weights_path)
 
     ###############################
     #   Predict bounding boxes 

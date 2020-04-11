@@ -6,10 +6,7 @@ from keras.preprocessing import image
 from keras.layers import Reshape, Activation, Conv2D, Input, MaxPooling2D, BatchNormalization, Flatten, Dense, Lambda, Add, ZeroPadding2D, AveragePooling2D, GlobalMaxPooling2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.initializers import glorot_uniform
-from keras.layers.merge import concatenate
 from keras.applications.mobilenet import MobileNet
-from keras.applications import InceptionV3
-from keras.applications.vgg16 import VGG16
 from keras.applications.resnet50 import ResNet50
 
 import numpy as np
@@ -66,7 +63,7 @@ class ResNet50Feature(BaseFeatureExtractor):
 
     def __init__(self, input_size):
         resnet50 = ResNet50(input_shape=(input_size, input_size, 3), include_top=False)
-        resnet50.layers.pop() # remove the average pooling layer
+        #resnet50.layers.pop() # remove the average pooling layer
         #resnet50.load_weights(RESNET50_BACKEND_PATH)
 
         self.feature_extractor = Model(resnet50.layers[0].input, resnet50.layers[-1].output)

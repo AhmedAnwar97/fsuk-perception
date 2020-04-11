@@ -1,21 +1,21 @@
 {
     "model" : {
         "backend":              "ResNet50",
-        "input_size":           416,
+        "input_size":           80,
         "anchors":              [1.69,5.13, 2.91,7.48, 3.78,4.36, 5.43,9.90, 9.61,12.21],
         "max_box_per_image":    10,        
         "labels":               ["car", "Van", "Truck", "person", "Cyclist"]
     },
 
     "train": {
-        "train_image_folder":   "/home/ahmed/cuda/keras-yolo2/images_kitti/",
-        "train_annot_folder":   "/home/ahmed/cuda/keras-yolo2/annotations_kitti/",     
+        "train_image_folder":   "/home/ahmed/formula_ai/fsuk-perception/images_kitti/",
+        "train_annot_folder":   "/home/ahmed/formula_ai/fsuk-perception/annotations_kitti/",     
           
-        "train_times":          16,
+        "train_times":          8,
         "pretrained_weights":   "weights.h5",
-        "batch_size":           4,
-        "learning_rate":        1e-3,
-        "nb_epochs":            400,
+        "batch_size":           128,
+        "learning_rate":        1e-4,
+        "nb_epochs":            40,
         "warmup_epochs":        10,
 
         "object_scale":         5.0 ,
@@ -24,7 +24,7 @@
         "class_scale":          1.0,
 
         "saved_weights_name":   "",
-        "debug":                true
+        "debug":                false
     },
 
     "valid": {
