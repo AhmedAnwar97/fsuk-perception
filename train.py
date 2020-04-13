@@ -44,12 +44,12 @@ def _main_(args):
     ###############################
 
     kp.train(train_imgs         = train_imgs,
-               train_times        = config['train']['train_times'],
-               nb_epochs          = config['train']['nb_epochs'], 
-               learning_rate      = config['train']['learning_rate'], 
-               batch_size         = config['train']['batch_size'],
-               saved_weights_name = config['train']['saved_weights_name'],
-               debug              = config['train']['debug'])
+             train_times        = config['train']['train_times'],
+             nb_epochs          = config['train']['nb_epochs'], 
+             learning_rate      = config['train']['learning_rate'], 
+             batch_size         = config['train']['batch_size'],
+             saved_weights_name = config['train']['saved_weights_name'],
+             debug              = config['train']['debug'])
 
 if __name__ == '__main__':
     args = argparser.parse_args()
