@@ -2,13 +2,15 @@
 
 import argparse
 import os
-import cv2
 import numpy as np
-from tqdm import tqdm
-from preprocessing_kp import parse_annotation
+from preprocessing import parse_annotation
+import cv2
 from utils import draw_boxes
-from frontend import YOLO
+from frontend import keypoints
 import json
+from keras.preprocessing import image
+import scipy.misc
+from keras.applications.imagenet_utils import preprocess_input
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -45,9 +47,7 @@ def _main_(args):
 
     kp = keypoints(backend             = config['model']['backend'],
                 input_size          = config['model']['input_size'], 
-                labels              = config['model']['labels'], 
-                max_box_per_image   = config['model']['max_box_per_image'],
-                anchors             = config['model']['anchors'])
+                labels              = config['model']['labels'])
 
     ###############################
     #   Load trained weights
@@ -58,38 +58,15 @@ def _main_(args):
     ###############################
     #   Predict bounding boxes 
     ###############################
+  
+    image = cv2.imread(image_path)
+    boxes = kp.predict(image)
+    # image = draw_boxes(image, boxes, config['model']['labels'])
 
-    if image_path[-4:] == '.mp4':
-        video_out = image_path[:-4] + '_detected' + image_path[-4:]
-        video_reader = cv2.VideoCapture(image_path)
+    print(len(boxes)*7, 'keypoints are found')
+    print(boxes)
 
-        nb_frames = int(video_reader.get(cv2.CAP_PROP_FRAME_COUNT))
-        frame_h = int(video_reader.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        frame_w = int(video_reader.get(cv2.CAP_PROP_FRAME_WIDTH))
-
-        video_writer = cv2.VideoWriter(video_out,
-                               cv2.VideoWriter_fourcc(*'MPEG'), 
-                               50.0, 
-                               (frame_w, frame_h))
-
-        for i in tqdm(range(nb_frames)):
-            _, image = video_reader.read()
-            
-            boxes = yolo.predict(image)
-            image = draw_boxes(image, boxes, config['model']['labels'])
-
-            video_writer.write(np.uint8(image))
-
-        video_reader.release()
-        video_writer.release()  
-    else:
-        image = cv2.imread(image_path)
-        boxes = yolo.predict(image)
-        image = draw_boxes(image, boxes, config['model']['labels'])
-
-        print(len(boxes), 'boxes are found')
-
-        cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
+    # cv2.imwrite(image_path[:-4] + '_detected' + image_path[-4:], image)
 
 if __name__ == '__main__':
     args = argparser.parse_args()
