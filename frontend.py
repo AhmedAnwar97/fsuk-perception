@@ -14,6 +14,8 @@ from keras.initializers import glorot_uniform
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from backend import ResNet50Feature, MobileNetFeature
 from preprocessing import parse_annotation, normalize
+from keras.applications.resnet50 import ResNet50
+
 
 class keypoints(object):
     def __init__(self, backend,
@@ -38,30 +40,16 @@ class keypoints(object):
         ##########################
 
         # make the feature extractor layers
-        input_image     = Input(shape=(self.input_size, self.input_size, 3))
-        # self.true_boxes = Input(shape=(1, 1, 1, max_box_per_image , 4))  
+        # input_image = Input(shape=(self.input_size, self.input_size, 3))
 
-        if backend == 'ResNet50':
-            self.feature_extractor = ResNet50Feature(self.input_size)
-        else:
-            raise Exception('Architecture not supported! Only support ResNet50 at the moment!')
+        base_model = ResNet50(weights= None, include_top=False, input_shape= (self.input_size,self.input_size,3))
 
-        print(self.feature_extractor.get_output_shape())    
-        self.grid_h, self.grid_w = self.feature_extractor.get_output_shape()        
-        features = self.feature_extractor.extract(input_image)            
+        x = base_model.output
+        x = Flatten()(x)
+        output = Dense(14, activation='relu', name='fc', kernel_initializer = 'normal')(x)
 
-        # make the keypoint detection layer
+        self.model = Model(inputs = base_model.input, outputs = output)
 
-        output = Flatten()(features)
-        output = Dense(14, activation='relu', name='fc', kernel_initializer = 'normal')(output)
-
-        self.model = Model(input_image, output)
-
-        
-        # initialize the weights of the detection layer
-        
-
-        # print a summary of the whole model
         self.model.summary()
 
 
@@ -70,7 +58,7 @@ class keypoints(object):
 
     def cross_ratio(self, surf, x, y):
         if surf == "left":
-            return (self.delta_(0, 2, x, y)/self.delta_(1, 3, x, y)) / (self.delta_(1, 2, x, y)/self.delta_(1, 3, x, y))
+            return (self.delta_(0, 2, x, y)/self.delta_(0, 3, x, y)) / (self.delta_(1, 2, x, y)/self.delta_(1, 3, x, y))
         elif surf == "right":
             return (self.delta_(0, 5, x, y)/self.delta_(0, 6, x, y)) / (self.delta_(4, 5, x, y)/self.delta_(4, 6, x, y))
     
@@ -80,20 +68,25 @@ class keypoints(object):
         Cr3D = 1.39408  # The 3D cross ratio of the cone
         loss = 0
         
-        for i in range(0, 14, 2):
-            self.X_predicted[int(i/2)] = pridection[i]
-            self.X_groundtruth[int(i/2)] = groundtruth[i]
+        loss = (K.square(pridection-groundtruth))
 
-        for j in range(1, 14, 2):
-            self.Y_predicted[int(j/2)] = pridection[j]
-            self.Y_groundtruth[int(j/2)] = groundtruth[j]
+        # for i in range(0, 14, 2):
+        #     self.X_predicted[int(i/2)] = pridection[i]
+        #     self.X_groundtruth[int(i/2)] = groundtruth[i]
+
+        # for j in range(1, 14, 2):
+        #     self.Y_predicted[int(j/2)] = pridection[j]
+        #     self.Y_groundtruth[int(j/2)] = groundtruth[j]
         
 
-        for k in range(0,7):
-            loss += (self.X_predicted[k]-self.X_groundtruth[k])**2 + (self.Y_predicted[k]-self.Y_groundtruth[k])**2 + \
-                segma*(self.cross_ratio("left", self.X_predicted, self.Y_predicted)-Cr3D)**2 + segma*(self.cross_ratio("right", self.X_predicted, self.Y_predicted)-Cr3D)**2
+        # for k in range(0,7):
+        #     loss += (self.X_predicted[k]-self.X_groundtruth[k])**2 + (self.Y_predicted[k]-self.Y_groundtruth[k])**2 + \
+        #         segma*((self.cross_ratio("left", self.X_predicted, self.Y_predicted)-Cr3D)**2 + (self.cross_ratio("right", self.X_predicted, self.Y_predicted)-Cr3D)**2)
 
         return loss
+
+    def load_weights(self, weight_path):
+        self.model.load_weights(weight_path)
 
     def train(self, train_imgs,     # the list of images to train the model
                     train_times,    # the number of time to repeat the training set, often used for small datasets
@@ -111,10 +104,13 @@ class keypoints(object):
         # Make train generators
         ############################################  
 
-        X_train_orig ,Y_train = parse_annotation()
+        X_train_orig ,Y_train_orig = parse_annotation()
 
-        X_train = normalize(X_train_orig)
+        X_train = np.array(normalize(X_train_orig))
+        Y_train = np.array(Y_train_orig)
 
+        print("Shape of X_train is: " + str(np.array(X_train).shape))
+        print("Shape of Y_train is: " + str(np.array(Y_train).shape))
 
         ############################################
         # Compile the model
@@ -148,12 +144,15 @@ class keypoints(object):
         # Start the training process
         ############################################        
 
-        self.model.fit(np.array(X_train), np.array(Y_train), 
+        self.model.fit(X_train, Y_train, 
                         epochs = nb_epochs, 
-                        batch_size = self.batch_size, 
-                        #callbacks = [early_stop, checkpoint, tensorboard], 
+                        batch_size = self.batch_size,
+                        callbacks = [checkpoint], 
                         workers = 3,
-                        max_queue_size = 8)      
+                        max_queue_size = 8) 
+
+        self.model.save_weights('weights.h5')
+     
 
         ############################################
         # Compute mAP on the validation set
@@ -282,13 +281,12 @@ class keypoints(object):
     def predict(self, image):
         image_h, image_w, _ = image.shape
         image = cv2.resize(image, (self.input_size, self.input_size))
-        image = self.feature_extractor.normalize(image)
+        image = np.array(normalize(image))
 
         input_image = image[:,:,::-1]
         input_image = np.expand_dims(input_image, 0)
-        dummy_array = np.zeros((1,1,1,1,self.max_box_per_image,4))
 
-        netout = self.model.predict([input_image, dummy_array])[0]
+        points = self.model.predict(input_image)
         
 
-        return boxes
+        return points
